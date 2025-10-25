@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <!-- ===================================================================================== -->
+  <!-- ===================================================================================== -->
+  <!-- Head Start From  -->
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Cart</title>
+    <!-- Css Link  -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Style Start From  -->
+    <style>
+      .thumb {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+      }
+    </style>
+    <!-- style End From  -->
+  </head>
+  <!-- Head End from -->
+  <!-- ===================================================================================== -->
+  <!-- ===================================================================================== -->
+  <!-- body Start from -->
+  <body class="bg-light">
+    <!-- nav_bar Start From -->
+    <nav class="navbar navbar-dark bg-dark mb-4">
+      <div class="container">
+        <a class="navbar-brand" href="index.html">My_Shop</a>
+      </div>
+    </nav>
+    <!-- nav_bar End from -->
+
+    <!-- ===================================================================================== -->
+
+    <!-- Main_div start From -->
+    <div class="container">
+      <h3>Your Cart</h3>
+      <div id="cartContainer" class="mt-3"></div>
+
+      <div class="d-flex justify-content-between align-items-center mt-4">
+        <h4>Total: $<span id="grandTotal">0.00</span></h4>
+        <div>
+          <a href="index.html" class="btn btn-secondary me-2"
+            >Continue Shopping</a
+          >
+          <a id="checkoutBtn" href="checkout.html" class="btn btn-primary"
+            >Proceed to Checkout</a
+          >
+        </div>
+      </div>
+    </div>
+    <!-- Main_div End from -->
+
+    <!-- ===================================================================================== -->
+    <!-- ===================================================================================== -->
+
+    <!-- Script Start from -->
+    <script>
+      function getCart() {
+        return JSON.parse(localStorage.getItem("cart") || "[]");
+      }
+      function saveCart(cart) {
+        localStorage.setItem("cart", JSON.stringify(cart));
+        renderCart();
+      }
+      function currency(n) {
+        return n.toFixed(2);
+      }
+
+      function renderCart() {
+        const container = document.getElementById("cartContainer");
+        const cart = getCart();
+        if (cart.length === 0) {
+          container.innerHTML =
+            '<div class="alert alert-info">Your cart is empty. <a href="index.html">Shop now</a></div>';
+          document.getElementById("grandTotal").textContent = "0.00";
+          document.getElementById("checkoutBtn").classList.add("disabled");
+          return;
+        }
+        document.getElementById("checkoutBtn").classList.remove("disabled");
+        let html = '<div class="list-group">';
+        cart.forEach((item) => {
+          const lineTotal = item.price * item.qty;
+          html += `
+      <div class="list-group-item">
+        <div class="row align-items-center">
+          <div class="col-auto"><img src="${
+            item.image
+          }" class="thumb" alt=""></div>
+          <div class="col">
+            <h6>${escapeHtml(item.title)}</h6>
+            <p class="mb-1"><strong>$${currency(item.price)}</strong> each</p>
+          </div>
+          <div class="col-auto d-flex align-items-center">
+            <div class="input-group input-group-sm">
+              <button class="btn btn-outline-secondary qty-btn" data-id="${
+                item.id
+              }" data-op="de">-</button>
+              <input class="form-control text-center qty-input" style="width:50px" value="${
+                item.qty
+              }" data-id="${item.id}">
+              <button class="btn btn-outline-secondary qty-btn" data-id="${
+                item.id
+              }" data-op="in">+</button>
+            </div>
+          </div>
+          <div class="col-auto text-end">
+            <p class="mb-1">Line: $${currency(lineTotal)}</p>
+            <button class="btn btn-sm btn-danger del-btn" data-id="${
+              item.id
+            }">Remove</button>
+          </div>
+        </div>
+      </div>`;
+        });
+        html += "</div>";
+        container.innerHTML = html;
+
+        // attach handlers
+        container.querySelectorAll(".qty-btn").forEach((b) => {
+          b.addEventListener("click", () => {
+            const id = +b.dataset.id,
+              op = b.dataset.op;
+            adjustQty(id, op === "in" ? 1 : -1);
+          });
+        });
+        container.querySelectorAll(".qty-input").forEach((inp) => {
+          inp.addEventListener("change", () => {
+            const id = +inp.dataset.id,
+              v = parseInt(inp.value) || 1;
+            setQty(id, Math.max(1, v));
+          });
+        });
+        container
+          .querySelectorAll(".del-btn")
+          .forEach((b) =>
+            b.addEventListener("click", () => removeItem(+b.dataset.id))
+          );
+
+        updateTotals();
+      }
+
+      function escapeHtml(s) {
+        return s
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;");
+      }
+
+      function adjustQty(id, delta) {
+        const cart = getCart();
+        const it = cart.find((x) => x.id === id);
+        if (!it) return;
+        it.qty = Math.max(1, it.qty + delta);
+        saveCart(cart);
+      }
+
+      function setQty(id, qty) {
+        const cart = getCart();
+        const it = cart.find((x) => x.id === id);
+        if (!it) return;
+        it.qty = Math.max(1, qty);
+        saveCart(cart);
+      }
+
+      function removeItem(id) {
+        let cart = getCart();
+        cart = cart.filter((i) => i.id !== id);
+        saveCart(cart);
+      }
+
+      function updateTotals() {
+        const cart = getCart();
+        const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+        document.getElementById("grandTotal").textContent = currency(total);
+      }
+
+      /* initialise */
+      renderCart();
+    </script>
+    <!-- Script End from -->
+     <!-- ===================================================================================== -->
+    <!-- ===================================================================================== -->
+     
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+  <!-- body End From  -->
+</html>

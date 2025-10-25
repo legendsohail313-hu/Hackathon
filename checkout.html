@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<!-- ===================================================================================== -->
+<!-- Head Start From -->
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Checkout</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>.thumb{width:60px;height:60px;object-fit:contain}</style>
+</head>
+<!-- Head End From -->
+ <!-- ===================================================================================== -->
+ <!-- ===================================================================================== -->
+
+  <!-- body Start From  -->
+<body class="bg-light">
+    <!-- nav-bar Start From  -->
+<nav class="navbar navbar-dark bg-dark mb-4">
+  <div class="container">
+    <a class="navbar-brand" href="index.html">My_Shop</a>
+  </div>
+</nav>
+<!-- nav-bar End From  -->
+ <!-- ===================================================================================== -->
+  <!-- ===================================================================================== -->
+
+  <!-- Main_div Start from  -->
+<div class="container">
+  <div class="row">
+    <div class="col-md-6">
+      <h4>Order Summary</h4>
+      <div id="orderSummary" class="mt-3"></div>
+      <h5 class="mt-3">Total: $<span id="totalAmount">0.00</span></h5>
+    </div>
+<!-- Main_div End From  -->
+    <div class="col-md-6">
+      <h4>Billing & Payment</h4>
+      <form id="checkoutForm" class="mt-3">
+        <div class="mb-2">
+          <label class="form-label">Full name</label>
+          <input required name="name" class="form-control"/>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Email</label>
+          <input required type="email" name="email" class="form-control"/>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Address</label>
+          <textarea required name="address" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Payment Type</label>
+          <select name="payment" class="form-select" required>
+            <option value="card">Card</option>
+            <option value="cod">Cash on Delivery</option>
+            <option value="paypal">PayPal</option>
+          </select>
+        </div>
+        <div>
+          <button class="btn btn-primary" type="submit">Place Order</button>
+          <a href="cart.html" class="btn btn-secondary ms-2">Back to Cart</a>
+        </div>
+      </form>
+      <div id="successMsg" class="alert alert-success mt-3 d-none"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function getCart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
+function currency(n){ return n.toFixed(2); }
+
+function renderOrder(){
+  const cart = getCart();
+  const container = document.getElementById('orderSummary');
+  if(cart.length===0){ container.innerHTML = '<div class="alert alert-info">No items in cart.</div>'; document.getElementById('totalAmount').textContent = '0.00'; return; }
+  let html = '<ul class="list-group">';
+  cart.forEach(it=>{
+    html += `<li class="list-group-item d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-3"><img src="${it.image}" class="thumb"><div><strong>${escapeHtml(it.title)}</strong><br><small>$${currency(it.price)} x ${it.qty}</small></div></div>
+      <div>$${currency(it.price * it.qty)}</div>
+    </li>`;
+  });
+  html += '</ul>';
+  container.innerHTML = html;
+  const total = cart.reduce((s,i)=>s + i.price * i.qty, 0);
+  document.getElementById('totalAmount').textContent = currency(total);
+}
+
+function escapeHtml(s){ return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+document.getElementById('checkoutForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  // Simulate submission
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form).entries());
+  // show success, clear cart
+  localStorage.removeItem('cart');
+  renderOrder();
+  const sm = document.getElementById('successMsg');
+  sm.classList.remove('d-none');
+  sm.innerHTML = `<strong>Order placed!</strong> Thank you ${escapeHtml(data.name)}. You will receive confirmation at <em>${escapeHtml(data.email)}</em>. Redirecting to home...`;
+  setTimeout(()=> window.location.href = 'index.html', 2500);
+});
+
+renderOrder();
+</script>
+<!-- Script End From  -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+<!-- Body End From  -->
+</html>

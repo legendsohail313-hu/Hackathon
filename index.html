@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+  <!-- ===================================================================================== -->
+  <!-- ===================================================================================== -->
+   <!-- Head Start -->
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Shop — Home</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <!-- ===================================================================================== -->
+  <!-- style Start -->
+  <style>
+    .card-img-top { object-fit: contain; height: 180px; }
+    .spinner-center { position: fixed; left:50%; top:40%; transform:translate(-50%,-50%); }
+  </style>
+  <!-- Style  End-->
+   <!-- ===================================================================================== -->
+</head>
+<!-- Head End  -->
+ <!-- ===================================================================================== -->
+  <!-- ===================================================================================== -->
+   <!-- Body Start  -->
+<body class="bg-light">
+
+  <!-- ===================================================================================== -->
+   <!-- ===================================================================================== -->
+    <!-- Nav_bar Start From  -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+  <div class="container">
+    <a class="navbar-brand" href="#">My_Shop</a>
+    <div>
+      <a class="btn btn-outline-light me-2" href="cart.html">Cart <span id="cart-count" class="badge bg-danger">0</span></a>
+    </div>
+  </div>
+</nav>
+<!-- Nav_bar End From  -->
+ <!-- ===================================================================================== -->
+  <!-- ===================================================================================== -->
+
+  <!-- Main Div Start From  -->
+<div class="container">
+  <div id="controls" class="row mb-3">
+    <div class="col-md-4">
+      <label class="form-label">Category</label>
+      <select id="categoryFilter" class="form-select">
+        <option value="all">All</option>
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Max Price: <span id="priceLabel">All</span></label>
+      <input id="priceRange" type="range" min="0" max="1000" step="1" class="form-range"/>
+    </div>
+    <div class="col-md-4 d-flex align-items-end justify-content-end">
+      <button id="clearFilters" class="btn btn-secondary">Clear Filters</button>
+    </div>
+  </div>
+
+  <div id="spinner" class="spinner-center d-none">
+    <div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>
+  </div>
+
+  <div id="productsRow" class="row g-3"></div>
+</div>
+<!-- Main Div End From  -->
+
+<!-- ===================================================================================== -->
+<!-- ===================================================================================== -->
+
+<!-- View Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 id="modalTitle" class="modal-title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body row">
+        <div class="col-md-5"><img id="modalImage" class="img-fluid" alt=""></div>
+        <div class="col-md-7">
+          <h6 id="modalPrice"></h6>
+          <p id="modalDesc"></p>
+          <p><strong>Category:</strong> <span id="modalCategory"></span></p>
+          <button id="modalAdd" class="btn btn-primary">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================================== -->
+ <!-- ===================================================================================== -->
+  <!-- JavaScript Start From  -->
+<script>
+/* Utilities for localStorage cart */
+function getCart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
+function saveCart(cart){ localStorage.setItem('cart', JSON.stringify(cart)); updateCartCount(); }
+function updateCartCount(){
+  const cart = getCart();
+  const count = cart.reduce((s,i)=>s+i.qty,0);
+  document.getElementById('cart-count').textContent = count;
+}
+
+/* Fetch products and render */
+const api = 'https://fakestoreapi.com/products';
+let products = [];
+
+const spinner = document.getElementById('spinner');
+function showSpinner(show){ spinner.classList.toggle('d-none', !show); }
+
+async function loadProducts(){
+  showSpinner(true);
+  try{
+    const res = await fetch(api);
+    products = await res.json();
+    renderCategoryOptions();
+    const maxPrice = Math.ceil(Math.max(...products.map(p=>p.price)));
+    const priceRange = document.getElementById('priceRange');
+    priceRange.max = maxPrice;
+    priceRange.value = priceRange.max;
+    document.getElementById('priceLabel').textContent = `Up to $${priceRange.value}`;
+    renderProducts();
+  }catch(e){
+    alert('Failed to load products.');
+    console.error(e);
+  } finally { showSpinner(false); updateCartCount(); }
+}
+
+function renderCategoryOptions(){
+  const cats = Array.from(new Set(products.map(p=>p.category)));
+  const select = document.getElementById('categoryFilter');
+  cats.forEach(c=>{
+    const opt = document.createElement('option'); opt.value = c; opt.textContent = c;
+    select.appendChild(opt);
+  });
+}
+
+/* ===================================================================================== */
+/* ===================================================================================== */
+
+function renderProducts(){
+  const row = document.getElementById('productsRow');
+  row.innerHTML = '';
+  const cat = document.getElementById('categoryFilter').value;
+  const maxP = Number(document.getElementById('priceRange').value);
+  document.getElementById('priceLabel').textContent = maxP ? `Up to $${maxP}` : 'All';
+  const filtered = products.filter(p => (cat==='all' || p.category===cat) && p.price <= maxP);
+  if(filtered.length===0){
+    row.innerHTML = '<div class="col-12"><div class="alert alert-warning">No products match filters.</div></div>';
+    return;
+  }
+  filtered.forEach(p=>{
+    const col = document.createElement('div'); col.className = 'col-sm-6 col-md-4 col-lg-3';
+    col.innerHTML = `
+      <div class="card h-100 shadow-sm">
+        <img src="${p.image}" class="card-img-top" alt="${escapeHtml(p.title)}">
+        <div class="card-body d-flex flex-column">
+          <h6 class="card-title">${escapeHtml(p.title)}</h6>
+          <p class="mb-2"><strong>$${p.price.toFixed(2)}</strong></p>
+          <div class="mt-auto d-flex gap-2">
+            <button class="btn btn-sm btn-outline-primary view-btn" data-id="${p.id}">View Details</button>
+            <button class="btn btn-sm btn-primary add-btn" data-id="${p.id}">Add to Cart</button>
+          </div>
+        </div>
+      </div>`;
+    row.appendChild(col);
+  });
+
+  // attach listeners
+  row.querySelectorAll('.add-btn').forEach(b => b.addEventListener('click', () => addToCartById(+b.dataset.id)));
+  row.querySelectorAll('.view-btn').forEach(b => b.addEventListener('click', () => openDetails(+b.dataset.id)));
+}
+
+function escapeHtml(s){ return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+function addToCartById(id){
+  const p = products.find(x=>x.id===id);
+  if(!p) return;
+  const cart = getCart();
+  const existing = cart.find(i=>i.id===id);
+  if(existing){ existing.qty += 1; } else { cart.push({ id:p.id, title:p.title, price:p.price, image:p.image, qty:1 }); }
+  saveCart(cart);
+  // friendly toast briefly
+  const btn = document.createElement('div'); btn.className='position-fixed top-0 end-0 m-3';
+  btn.innerHTML = `<div class="toast show align-items-center text-bg-success border-0"><div class="d-flex"><div class="toast-body">Added to cart</div><button class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>`;
+  document.body.appendChild(btn);
+  setTimeout(()=>btn.remove(),2200);
+}
+
+/* ===================================================================================== */
+/* ===================================================================================== */
+
+/* Modal view details */
+function openDetails(id){
+  const p = products.find(x=>x.id===id);
+  if(!p) return;
+  document.getElementById('modalTitle').textContent = p.title;
+  document.getElementById('modalImage').src = p.image;
+  document.getElementById('modalDesc').textContent = p.description;
+  document.getElementById('modalPrice').textContent = `$${p.price.toFixed(2)}`;
+  document.getElementById('modalCategory').textContent = p.category;
+  const modalAdd = document.getElementById('modalAdd');
+  modalAdd.onclick = () => { addToCartById(p.id); bootstrap.Modal.getInstance(document.getElementById('detailsModal'))?.hide(); };
+  const bsModal = new bootstrap.Modal(document.getElementById('detailsModal'));
+  bsModal.show();
+}
+
+/* ===================================================================================== */
+/* ===================================================================================== */
+
+/* Filters Start From*/
+document.getElementById('priceRange').addEventListener('input', renderProducts);
+document.getElementById('categoryFilter').addEventListener('change', renderProducts);
+document.getElementById('clearFilters').addEventListener('click', ()=>{
+  document.getElementById('categoryFilter').value='all';
+  document.getElementById('priceRange').value = document.getElementById('priceRange').max;
+  renderProducts();
+});
+/* Filter End From*/
+
+/* ===================================================================================== */
+/* ===================================================================================== */
+
+/* init */
+loadProducts();
+</script>
+<!-- JavaScript End From  -->
+ <!-- ===================================================================================== -->
+  <!-- ===================================================================================== -->
+  <!-- Script Link  -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+<!-- Body End  -->
+</html>
