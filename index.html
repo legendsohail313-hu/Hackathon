@@ -14,6 +14,10 @@
     .card-img-top { object-fit: contain; height: 180px; }
     .spinner-center { position: fixed; left:50%; top:40%; transform:translate(-50%,-50%); }
 
+    html{
+      scroll-behavior: smooth;
+    }
+
     /* ======= Professional Coder Loader ======= */
     #pageLoader {
       position: fixed;
@@ -27,39 +31,115 @@
       flex-direction: column;
       z-index: 9999;
       font-family: monospace;
+      overflow: hidden;
     }
-    #pageLoader .typing {
-      border-right: 3px solid #00ffcc;
+
+    .coder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: fadeIn 1s ease-in;
+    }
+
+    .laptop {
+      width: 120px;
+      height: 80px;
+      border: 2px solid #00ffcc;
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+      background: rgba(0, 255, 204, 0.05);
+    }
+
+    .code-line {
+      width: 80%;
+      height: 6px;
+      background: #00ffcc;
+      margin: 6px auto;
+      border-radius: 2px;
+      animation: coding 2s infinite linear;
+    }
+
+    .code-line:nth-child(2) { animation-delay: 0.4s; opacity: 0.7; }
+    .code-line:nth-child(3) { animation-delay: 0.8s; opacity: 0.5; }
+
+    .keyboard {
+      width: 130px;
+      height: 10px;
+      background: #00ffcc;
+      border-radius: 3px;
+      margin-top: 6px;
+      animation: glow 1.2s infinite ease-in-out;
+    }
+
+    @keyframes coding {
+      0% { transform: translateX(-100%); }
+      50% { transform: translateX(10%); }
+      100% { transform: translateX(100%); }
+    }
+
+    @keyframes glow {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #loadingText {
+      margin-top: 25px;
+      font-size: 18px;
+      color: #00ffcc;
+      border-right: 2px solid #00ffcc;
       white-space: nowrap;
       overflow: hidden;
       width: 0;
       animation: typing 3s steps(30, end) forwards, blink 0.7s infinite;
-      font-size: 20px;
     }
+
     @keyframes typing {
-      from { width: 0 }
-      to { width: 260px }
+      from { width: 0; }
+      to { width: 200px; }
     }
+
     @keyframes blink {
-      50% { border-color: transparent }
+      50% { border-color: transparent; }
     }
-    #pageLoader .dots {
-      display: flex;
-      margin-top: 20px;
+
+    /* Fade out animation for loader */
+    .fade-out {
+      animation: fadeOut 1s ease forwards;
     }
-    #pageLoader .dots div {
-      width: 10px; height: 10px;
-      background: #00ffcc;
-      margin: 0 5px;
-      border-radius: 50%;
-      animation: bounce 1.2s infinite ease-in-out;
+
+    @keyframes fadeOut {
+      to { opacity: 0; visibility: hidden; }
     }
-    #pageLoader .dots div:nth-child(1){ animation-delay: 0s; }
-    #pageLoader .dots div:nth-child(2){ animation-delay: 0.2s; }
-    #pageLoader .dots div:nth-child(3){ animation-delay: 0.4s; }
-    @keyframes bounce {
-      0%, 80%, 100% { transform: scale(0); }
-      40% { transform: scale(1); }
+
+    /* ======= Product Box Animation ======= */
+    .card {
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+    }
+
+    .card:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-body h6 {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .card-body .btn {
+      transition: all 0.2s ease-in-out;
+    }
+
+    .card-body .btn:hover {
+      transform: scale(1.05);
     }
   </style>
   <!-- Style  End-->
@@ -73,10 +153,15 @@
 
   <!-- ===== Loader Start ===== -->
   <div id="pageLoader">
-    <div class="typing">Loading Shop Data...</div>
-    <div class="dots">
-      <div></div><div></div><div></div>
+    <div class="coder">
+      <div class="laptop">
+        <div class="code-line"></div>
+        <div class="code-line"></div>
+        <div class="code-line"></div>
+      </div>
+      <div class="keyboard"></div>
     </div>
+    <div id="loadingText">Loading Shop Data...</div>
   </div>
   <!-- ===== Loader End ===== -->
 
@@ -183,7 +268,11 @@ async function loadProducts(){
   } finally {
     showSpinner(false);
     updateCartCount();
-    document.getElementById('pageLoader').style.display = 'none'; // hide loader when loaded
+    // Delay loader fade-out to 4–5 seconds
+    setTimeout(()=>{
+      document.getElementById('pageLoader').classList.add('fade-out');
+      setTimeout(()=>document.getElementById('pageLoader').style.display='none',1000);
+    },4000);
   }
 }
 
